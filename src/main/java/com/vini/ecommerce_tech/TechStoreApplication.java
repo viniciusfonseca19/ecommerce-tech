@@ -1,4 +1,4 @@
-package com.ecommerce.tech;
+package com.vini.ecommerce_tech;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

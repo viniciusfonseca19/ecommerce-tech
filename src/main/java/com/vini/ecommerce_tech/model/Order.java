@@ -1,44 +1,37 @@
 package com.vini.ecommerce_tech.model;
 
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
-/**
- * Entidade Order - representa um pedido finalizado pelo cliente.
- * Mapeada para a coleção "orders" no MongoDB.
- */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Document(collection = "orders")
+@Entity
+@Table(name = "orders")
 public class Order {
 
-    /** Identificador único do pedido */
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
-    /**
-     * Lista de itens do pedido.
-     * Armazena uma cópia dos produtos no momento da compra
-     * (evita que alterações futuras nos produtos afetem pedidos antigos).
-     */
+    // Relacionamento One-to-Many com OrderItem
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> items;
 
-    /** Valor total calculado do pedido */
+    @Column(name = "total_price", nullable = false, precision = 10, scale = 2)
     private BigDecimal totalPrice;
 
-    /** Status do pedido: PENDING, CONFIRMED, DELIVERED, CANCELLED */
+    @Column(nullable = false, length = 50)
     private String status;
 
-    /** Data e hora em que o pedido foi criado */
+    @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 }

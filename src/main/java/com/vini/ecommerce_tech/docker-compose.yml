@@ -1,0 +1,66 @@
+version: '3.9'
+
+services:
+
+  mysql:
+    image: mysql:8.0
+    container_name: techstore-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-Deusmeu19}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-techstore}
+      MYSQL_USER: ${MYSQL_USER:-techstore}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-techstorepass}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - techstore-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: techstore-backend
+    restart: unless-stopped
+    environment:
+      MYSQL_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-techstore}?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/Sao_Paulo
+      MYSQL_USER: ${MYSQL_USER:-techstore}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-techstorepass}
+      SERVER_PORT: 8080
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - techstore-network
+
+  frontend:
+    image: nginx:alpine
+    container_name: techstore-frontend
+    restart: unless-stopped
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    ports:
+      - "${FRONTEND_PORT:-3000}:80"
+    depends_on:
+      - backend
+    networks:
+      - techstore-network
+
+volumes:
+  mysql_data:
+    driver: local
+
+networks:
+  techstore-network:
+    driver: bridge

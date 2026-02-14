@@ -8,9 +8,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * DTO para um item individual do carrinho no momento de finalizar o pedido.
- */
 @Data
 @Builder
 @NoArgsConstructor

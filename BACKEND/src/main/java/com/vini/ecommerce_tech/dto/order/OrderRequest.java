@@ -9,10 +9,6 @@ import lombok.NoArgsConstructor;
 
 import java.util.List;
 
-/**
- * DTO para criação de um novo pedido.
- * Recebe a lista de itens do carrinho do cliente.
- */
 @Data
 @Builder
 @NoArgsConstructor

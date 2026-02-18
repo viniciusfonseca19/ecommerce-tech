@@ -1,7 +1,4 @@
-// src/services/api.js
-// Centraliza todas as chamadas ao backend Spring Boot
-
-const API_BASE = 'http://localhost:8080/api';
+const API_BASE = ''; // será preenchido depois
 
 async function request(endpoint, options = {}) {
   const url = `${API_BASE}${endpoint}`;
@@ -9,17 +6,10 @@ async function request(endpoint, options = {}) {
     headers: { 'Content-Type': 'application/json', ...options.headers },
     ...options,
   };
-
   const response = await fetch(url, config);
-
   if (response.status === 204) return null;
-
   const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message || `Erro ${response.status}`);
-  }
-
+  if (!response.ok) throw new Error(data.message || `Erro ${response.status}`);
   return data;
 }
 

@@ -1,62 +1,40 @@
-import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import { createContext, useContext, useState, useCallback } from 'react';
 
-const CartContext = createContext();
+const ToastContext = createContext(null);
 
-export function CartProvider({ children }) {
-  const [items, setItems] = useState(() => {
-    const saved = localStorage.getItem('techstore_cart');
-    return saved ? JSON.parse(saved) : [];
-  });
+let toastId = 0;
 
-  useEffect(() => {
-    localStorage.setItem('techstore_cart', JSON.stringify(items));
-  }, [items]);
+export function ToastProvider({ children }) {
+  const [toasts, setToasts] = useState([]);
 
-  const addItem = (product, qty = 1) => {
-    setItems((prev) => {
-      const existing = prev.find((item) => item.id === product.id);
-      if (existing) {
-        const newQty = Math.min(existing.qty + qty, product.stock);
-        return prev.map((item) =>
-          item.id === product.id ? { ...item, qty: newQty } : item
-        );
-      }
-      return [...prev, { ...product, qty }];
-    });
-  };
+  const showToast = useCallback((message, type = 'info') => {
+    const id = ++toastId;
+    setToasts((prev) => [...prev, { id, message, type }]);
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 3500);
+  }, []);
 
-  const removeItem = (id) => {
-    setItems((prev) => prev.filter((item) => item.id !== id));
-  };
-
-  const updateQuantity = (id, qty) => {
-    if (qty < 1) return;
-    setItems((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, qty: Math.min(qty, item.stock) } : item
-      )
-    );
-  };
-
-  const clearCart = () => setItems([]);
-
-  const total = useMemo(() => {
-    return items.reduce((acc, item) => acc + item.price * item.qty, 0);
-  }, [items]);
-
-  const count = useMemo(() => {
-    return items.reduce((acc, item) => acc + item.qty, 0);
-  }, [items]);
+  const removeToast = (id) => setToasts((prev) => prev.filter((t) => t.id !== id));
 
   return (
-    <CartContext.Provider
-      value={{ items, addItem, removeItem, updateQuantity, clearCart, total, count }}
-    >
+    <ToastContext.Provider value={{ showToast }}>
       {children}
-    </CartContext.Provider>
+      <div className="toast-container">
+        {toasts.map((t) => (
+          <div key={t.id} className={`toast toast-${t.type}`} onClick={() => removeToast(t.id)}>
+            <span className="toast-icon">
+              {t.type === 'success' && '✓'}
+              {t.type === 'error' && '✕'}
+              {t.type === 'warning' && '⚠'}
+              {t.type === 'info' && 'ℹ'}
+            </span>
+            <span className="toast-message">{t.message}</span>
+          </div>
+        ))}
+      </div>
+    </ToastContext.Provider>
   );
 }
 
-export function useCart() {
-  return useContext(CartContext);
-}
+export const useToast = () => useContext(ToastContext);

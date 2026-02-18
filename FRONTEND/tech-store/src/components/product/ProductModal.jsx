@@ -1,107 +1,70 @@
-import React, { useState, useEffect } from 'react';
-import { CATEGORIES } from '../utils';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { formatCurrency, getCategoryInfo, getImageFallback } from '../utils';
+import { useCart } from '../context/CartContext';
+import { useToast } from '../context/ToastContext';
 
-export default function ProductModal({ product, onClose, onSave }) {
-  const [formData, setFormData] = useState({
-    name: '',
-    price: '',
-    stock: '',
-    category: 'peripherals',
-    description: '',
-    imageUrl: ''
-  });
+export default function ProductModal({ product, onClose }) {
+  const [qty, setQty] = useState(1);
+  const { addItem } = useCart();
+  const { showToast } = useToast();
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    if (product) {
-      setFormData(product);
-    }
-  }, [product]);
+  if (!product) return null;
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+  const catInfo = getCategoryInfo(product.category);
+
+  const handleAdd = () => {
+    addItem(product, qty);
+    showToast(`${product.name} adicionado ao carrinho!`, 'success');
+    onClose();
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onSave({
-      ...formData,
-      price: Number(formData.price),
-      stock: Number(formData.stock)
-    });
+  const handleViewDetail = () => {
+    navigate(`/product/${product.id}`);
+    onClose();
   };
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal-content" onClick={e => e.stopPropagation()}>
-        <h2>{product ? 'Editar Produto' : 'Novo Produto'}</h2>
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-          
-          <div className="input-group">
-            <input 
-              name="name" 
-              className="input-field" 
-              placeholder="Nome do Produto" 
-              value={formData.name} 
-              onChange={handleChange} 
-              required 
+      <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+        <button className="modal-close" onClick={onClose}>✕</button>
+        <div className="modal-product-layout">
+          <div className="modal-product-img">
+            <img
+              src={product.imageUrl || getImageFallback(product.name)}
+              alt={product.name}
+              onError={(e) => { e.target.src = getImageFallback(product.name); }}
             />
           </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-            <input 
-              name="price" 
-              type="number" 
-              className="input-field" 
-              placeholder="Preço" 
-              value={formData.price} 
-              onChange={handleChange} 
-              required 
-            />
-            <input 
-              name="stock" 
-              type="number" 
-              className="input-field" 
-              placeholder="Estoque" 
-              value={formData.stock} 
-              onChange={handleChange} 
-              required 
-            />
+          <div className="modal-product-info">
+            <div className="product-card-cat">{catInfo.icon} {catInfo.label}</div>
+            <h2 className="modal-product-name">{product.name}</h2>
+            <p className="modal-product-desc">{product.description}</p>
+            <div className="modal-price">{formatCurrency(product.price)}</div>
+            <div className="modal-stock">
+              {product.stock === 0
+                ? <span className="stock-out">Esgotado</span>
+                : <span className="stock-ok">Em estoque: {product.stock} unidades</span>
+              }
+            </div>
+            {product.stock > 0 && (
+              <div className="modal-qty-row">
+                <button onClick={() => setQty(q => Math.max(1, q - 1))}>−</button>
+                <span>{qty}</span>
+                <button onClick={() => setQty(q => Math.min(product.stock, q + 1))}>+</button>
+              </div>
+            )}
+            <div className="modal-actions">
+              <button className="btn-primary" onClick={handleAdd} disabled={product.stock === 0}>
+                Adicionar ao Carrinho
+              </button>
+              <button className="btn-secondary" onClick={handleViewDetail}>
+                Ver Detalhes
+              </button>
+            </div>
           </div>
-
-          <select 
-            name="category" 
-            className="input-field" 
-            value={formData.category} 
-            onChange={handleChange}
-          >
-            {Object.keys(CATEGORIES).map(cat => (
-              <option key={cat} value={cat}>{CATEGORIES[cat].label}</option>
-            ))}
-          </select>
-
-          <input 
-            name="imageUrl" 
-            className="input-field" 
-            placeholder="URL da Imagem" 
-            value={formData.imageUrl} 
-            onChange={handleChange} 
-          />
-
-          <textarea 
-            name="description" 
-            className="input-field" 
-            placeholder="Descrição" 
-            rows="3"
-            value={formData.description} 
-            onChange={handleChange} 
-          ></textarea>
-
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
-            <button type="button" className="btn btn-secondary" onClick={onClose}>Cancelar</button>
-            <button type="submit" className="btn btn-primary">Salvar</button>
-          </div>
-        </form>
+        </div>
       </div>
     </div>
   );
